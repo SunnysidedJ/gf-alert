@@ -14,7 +14,8 @@ struct Config: Codable {
             .appendingPathComponent(".config/gf-alert/config.json")
 
         if let data = try? Data(contentsOf: userConfigURL),
-           let config = try? JSONDecoder().decode(Config.self, from: data) {
+           let config = try? JSONDecoder().decode(Config.self, from: data),
+           config.intervalMinutes > 0 {
             return config
         }
 
@@ -26,7 +27,8 @@ struct Config: Codable {
             .appendingPathComponent("config.json")
 
         if let data = try? Data(contentsOf: bundledURL),
-           let config = try? JSONDecoder().decode(Config.self, from: data) {
+           let config = try? JSONDecoder().decode(Config.self, from: data),
+           config.intervalMinutes > 0 {
             return config
         }
 

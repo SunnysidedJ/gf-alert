@@ -23,7 +23,12 @@ A lightweight macOS background app that reminds you to text your girlfriend at r
 ./install.sh
 ```
 
-Then allow notifications in **System Settings > Notifications > gf-alert**.
+Then complete the required notification setup:
+
+1. **Allow notifications**: System Settings > Notifications > gf-alert > toggle on
+2. **Set alert style to "Alerts"**: System Settings > Notifications > gf-alert > Alert style > **Alerts**
+
+> The "Alerts" style is required. With "Banners", notifications auto-dismiss before you can click the confirm button, causing the app to re-nag every 5 minutes.
 
 ## Configure
 
