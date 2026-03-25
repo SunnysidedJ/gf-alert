@@ -10,7 +10,16 @@ final class AlertScheduler {
     private let monitor: SystemStateMonitor
     private let notifications: NotificationManager
     private var state: State = .idle
-    private var lastConfirmedTime: Date = .distantPast
+    private static let stateFileURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent(".config/gf-alert/last-confirmed")
+
+    private var lastConfirmedTime: Date = {
+        guard let data = try? Data(contentsOf: AlertScheduler.stateFileURL),
+              let ts = try? JSONDecoder().decode(Date.self, from: data) else {
+            return .distantPast
+        }
+        return ts
+    }()
     private var timer: DispatchSourceTimer?
 
     private let reminderInterval: TimeInterval = 5 * 60 // Re-nag every 5 minutes
@@ -21,9 +30,20 @@ final class AlertScheduler {
         self.monitor = monitor
         self.notifications = notifications
 
-        // Fire alert immediately when system becomes available (wake/unlock)
+        // Fire alert when system becomes available (wake/unlock), but only if
+        // there's a pending unconfirmed alert or the interval has already elapsed.
         monitor.onBecameAvailable = { [weak self] in
-            self?.fireAlert()
+            guard let self else { return }
+            switch self.state {
+            case .alerting:
+                self.fireAlert()
+            case .idle:
+                let elapsed = Date().timeIntervalSince(self.lastConfirmedTime)
+                let interval = TimeInterval(self.config.intervalMinutes * 60)
+                if elapsed >= interval {
+                    self.fireAlert()
+                }
+            }
         }
 
         // Reset timer when user confirms
@@ -77,5 +97,9 @@ final class AlertScheduler {
     private func handleConfirmation() {
         lastConfirmedTime = Date()
         state = .idle
+        if let data = try? JSONEncoder().encode(lastConfirmedTime) {
+            try? data.write(to: Self.stateFileURL)
+        }
+        print("Confirmation received, next alert in \(config.intervalMinutes) min")
     }
 }
