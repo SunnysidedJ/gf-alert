@@ -80,8 +80,14 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse
     ) async {
         if response.actionIdentifier == Self.confirmActionIdentifier {
-            removeAllNotifications()
-            onConfirmed?()
+            // Dispatch to main queue so state updates are serialized with the GCD
+            // tick timer, preventing a race where the re-nag fires after the user
+            // already confirmed.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.removeAllNotifications()
+                self.onConfirmed?()
+            }
         }
     }
 }
